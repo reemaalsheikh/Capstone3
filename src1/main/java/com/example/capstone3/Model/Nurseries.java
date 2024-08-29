@@ -22,7 +22,6 @@ public class Nurseries {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // farmers_id
 
     @NotEmpty(message = "Name shouldn't be empty ")
     @Column(columnDefinition = "varchar(30) not null")
