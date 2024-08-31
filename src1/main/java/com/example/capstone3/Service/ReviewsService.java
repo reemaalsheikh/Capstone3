@@ -46,16 +46,7 @@ public class ReviewsService {
         reviewsRepository.delete(reviews);
     }
 
-    public void assignReviewsToConsultant(Integer review_id, Integer consultant_id){
-        Reviews reviews = reviewsRepository.findReviewsById(review_id);
-        Consultant consultant = consultantRepository.findConsultantById(consultant_id);
 
-        if ( reviews==null || consultant==null) {
-            throw new ApiException("Cannot assign reviews to consultant");
-        }
-//        reviews.setConsultant(consultant);
-        reviewsRepository.save(reviews);
-    }
 
     //assign Order ToReview
     public void assignOrderToReview(Integer orderId,Integer revId) {
