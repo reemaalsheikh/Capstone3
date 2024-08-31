@@ -36,11 +36,6 @@ public class ReviewsController {
         return ResponseEntity.status(200).body(new ApiResponse("Reviews deleted successfully!"));
     }
 
-    @PutMapping("/assign/{review_id}/{consultant_id}")
-    public ResponseEntity assignReviewsToConsultant (@PathVariable Integer review_id, @PathVariable Integer consultant_id ){
-        reviewsService.assignReviewsToConsultant(review_id,consultant_id);
-        return ResponseEntity.status(200).body(new ApiResponse("Reviews Assigned to Consultant Successfully"));
-    }
 
     //assign Order ToReview
     @PutMapping("/assignOrderToReview/{orderId}/{revId}")
