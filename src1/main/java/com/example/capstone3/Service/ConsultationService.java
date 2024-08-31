@@ -71,13 +71,16 @@ public class ConsultationService {
        consultationRepository.delete(consultation1);
     }
 
-    //5: Change status to complete
+  //5: Change status to complete
     public void ChangeStatusToCompleted(Integer consultationid,Integer consultatid,Integer userId){
         Consultation consultation=consultationRepository.findConsultationById(consultationid);
         Consultant consultant=consultantRepository.findConsultantById(consultatid);
         Users users=usersRepository.findUsersById(userId);
-        if(consultation==null){
+        if(consultation==null||consultant==null){
             throw new ApiException("Consultation or consultant not found");
+        }
+        if (!consultation.getConsultant().equals(consultant)) {
+            throw new ApiException("consultant or consultation not found ");
         }
         if(consultation.getStatus().equalsIgnoreCase("Completed")){
             throw new ApiException("It is already Completed.");
@@ -91,49 +94,72 @@ public class ConsultationService {
         if(consultation.getStatus().equalsIgnoreCase("Canceled")){
             throw new ApiException("The consultation is already Canceled.");
         }
-        consultation.setUpdatedAt(LocalDate.now());
-        consultation.setStatus("Completed");
-        consultationRepository.save(consultation);
+        //edit
+           consultant.setConsultantConfirmed(false);
+           users.setClientConfirmed(false);
+            consultation.setUpdatedAt(LocalDate.now());
+            consultation.setStatus("Completed");
+            consultationRepository.save(consultation);
 
 
     }
 
-    //
-    public void extendConsultationDuration(Integer userId,Integer consultationId, double additionalDuration) {
-        Users users=usersRepository.findUsersById(userId);
+
+   public void extendConsultationDuration(Integer userId,Integer consultationId, double additionalDuration) {
+    Users users=usersRepository.findUsersById(userId);
         Consultation consultation = consultationRepository.findConsultationById(consultationId);
 
-        if (consultation == null|| users==null) {
-            throw new ApiException("Consultation or user not found");
-        }
-        consultation.setDuration(consultation.getDuration() + additionalDuration);
-        consultation.setTotalAmount(consultation.getDuration()*consultation.getConsultationFee());
-        consultation.setUpdatedAt(LocalDate.now());
+    if (consultation == null|| users==null) {
+        throw new ApiException("Consultation or user not found");
+    }
+    if(!consultation.getUsers().equals(users)){
+        throw new ApiException("User has no consultation");
+    }
+    if(consultation.getStatus().equalsIgnoreCase("Completed")){
+        throw new ApiException("The consultation it is already completed");
+    }
+    if(consultation.getStatus().equalsIgnoreCase("Canceled")){
+        throw new ApiException("it is already canceled");
+    }
+    consultation.setDuration(consultation.getDuration() + additionalDuration);
+    consultation.setTotalAmount(consultation.getDuration()*consultation.getConsultationFee());
+    consultation.setUpdatedAt(LocalDate.now());
 
-        consultationRepository.save(consultation);
+    consultationRepository.save(consultation);
+}
+
+//edit done
+public void canceledStatusOfConsultation(Integer userId, Integer conId) {
+    LocalDate currentDate = LocalDate.now();
+
+
+    Users user = usersRepository.findUsersById(userId);
+    Consultation consultation = consultationRepository.findConsultationById(conId);
+    if (user == null || consultation == null) {
+        throw new ApiException("User or consultation not found");
     }
 
-    //
-    public void canceledStatusOfConsultation(Integer userId, Integer conId) {
-        LocalDate currentDate = LocalDate.now();
-        Users user = usersRepository.findUsersById(userId);
-        Consultation consultation = consultationRepository.findConsultationById(conId);
 
-        if (user == null || consultation == null) {
-            throw new ApiException("User or consultation not found");
-        }
-
-        // Check the possibility of cancellation before the day of the consultation
-        boolean canCancel = consultationRepository.canCancelBeforeConsultationDate(conId, currentDate);
-        if (!canCancel) {
-            throw new ApiException("Cannot cancel the consultation on or after the consultation date");
-        }
-
-        // Set the status to "Canceled"
-        consultation.setStatus("Canceled");
-        consultationRepository.save(consultation);
-
+    if (!user.getConsultations().contains(consultation)) {
+        throw new ApiException("User has no consultation ");
     }
+
+    if(consultation.getStatus().equalsIgnoreCase("Completed")){
+        throw new ApiException("it is already Completed");
+    }
+
+    if(consultation.getStatus().equalsIgnoreCase("Canceled")){
+        throw new ApiException("it is already canceled");
+    }
+
+    boolean canCancel = consultationRepository.canCancelBeforeConsultationDate(conId, currentDate);
+    if (!canCancel) {
+        throw new ApiException("Cannot cancel the consultation on or after the consultation date");
+    }
+
+    consultation.setStatus("Canceled");
+    consultationRepository.save(consultation);
+}
 
 
 
