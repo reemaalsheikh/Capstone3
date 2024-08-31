@@ -83,22 +83,28 @@ public class UsersService {
         return plan;
     }
 
-    public void userConfirmed(Integer id,Integer bookingId ){
-        Users users=usersRepository.findUsersById(id);
-        Consultation consultation=consultationRepository.findConsultationById(bookingId);
-        if(users==null || consultation==null) {
+   public void userConfirmed(Integer id, Integer bookingId) {
+        Users users = usersRepository.findUsersById(id);
+        Consultation consultation = consultationRepository.findConsultationById(bookingId);
+
+        if (users == null || consultation == null) {
             throw new ApiException("User or consultation not found");
         }
-        if(consultation.getStatus().equalsIgnoreCase("completed")){
+
+        if(!consultation.getUsers().equals(users)){
+            throw new ApiException("User has no consultation") ;
+        }
+
+        if (consultation.getStatus().equalsIgnoreCase("completed")) {
             throw new ApiException("It is finished.");
         }
-        if(consultation.getStatus().equalsIgnoreCase("PENDING")){
+        if (consultation.getStatus().equalsIgnoreCase("PENDING")) {
             throw new ApiException("The consultation was not approved.");
         }
-        if(consultation.getStatus().equalsIgnoreCase("Canceled")){
+        if (consultation.getStatus().equalsIgnoreCase("Canceled")) {
             throw new ApiException("The consultation is already Canceled.");
         }
-        if(users.getClientConfirmed().equals(true)){
+        if (users.getClientConfirmed().equals(true)) {
             throw new ApiException("The session has been confirmed.");
         }
         users.setClientConfirmed(true);
