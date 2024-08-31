@@ -54,18 +54,20 @@ public class ConsultantService {
         consultantRepository.delete(consultant);
     }
 
-    public void confirmConsultationSchedule(Integer consultationId,Integer consultantId,String status) {
+  public void confirmConsultationSchedule(Integer consultationId,Integer consultantId,String status) {
         Consultation consultation = consultationRepository.findConsultationById(consultationId);
         Consultant consultant=consultantRepository.findConsultantById(consultantId);
 
-        if (!consultation.getConsultant().equals(consultant)) {
-            throw new ApiException("Consultant and consultation are not the same");
-        }
         if(consultation==null) {
             throw new ApiException("Consultation not found");
         }
+
         if(consultant==null) {
             throw new ApiException("consultant id not found");
+        }
+
+        if (!consultation.getConsultant().equals(consultant)) {
+            throw new ApiException("consultant has no consultation");
         }
 
         if (!consultation.getStatus().equalsIgnoreCase("PENDING")) {
@@ -74,22 +76,23 @@ public class ConsultantService {
         if(status.equalsIgnoreCase("agree")){
             consultation.setStatus("Scheduled");
             consultation.setUpdatedAt(LocalDate.now());
-            // available
+           // available
         }
-        consultationRepository.save(consultation);
+            consultationRepository.save(consultation);
 
 
     }
-    //2
+   
     public void consultantConfirmed(Integer id,Integer bookingId ){
         Consultant consultant=consultantRepository.findConsultantById(id);
         Consultation consultation=consultationRepository.findConsultationById(bookingId);
 
-        if (!consultation.getConsultant().equals(consultant)) {
-            throw new ApiException("Consultant and consultation are not the same");
-        }
         if(consultant==null || consultation==null) {
             throw new ApiException("consultant or consultation not found");
+        }
+
+        if (!consultation.getConsultant().equals(consultant)) {
+            throw new ApiException("consultant has no consultation ");
         }
 
         if(consultation.getStatus().equalsIgnoreCase("Completed")){
@@ -104,23 +107,36 @@ public class ConsultantService {
         if(consultant.getConsultantConfirmed().equals(true)){
             throw new ApiException("The session has been confirmed.");
         }
-        consultant.setUpdatedAt(LocalDate.now());
-        consultant.setConsultantConfirmed(true);
-        consultantRepository.save(consultant);
+            consultant.setUpdatedAt(LocalDate.now());
+            consultant.setConsultantConfirmed(true);
+            consultantRepository.save(consultant);
 
     }
+    
+   
     //3:Consultant Cancel consultation
     public void canceledStatusOfConsultation(Integer consultantId,Integer consultationId){
-        Consultant consultant=consultantRepository.findConsultantById(consultantId);
-        Consultation consultation=consultationRepository.findConsultationById(consultationId);
+        LocalDate currentDate = LocalDate.now();
+      Consultant consultant=consultantRepository.findConsultantById(consultantId);
+      Consultation consultation=consultationRepository.findConsultationById(consultationId);
+
+      if(consultant==null||consultation==null){
+          throw new ApiException("consultant or consultation not found");
+      }
+
         if (!consultation.getConsultant().equals(consultant)) {
-            throw new ApiException("Consultant and consultation are not the same");
+            throw new ApiException("consultant has no consultation");
         }
-        if(consultant==null||consultation==null){
-            throw new ApiException("consultant or consultation not found");
+        if(consultation.getStatus().equalsIgnoreCase("Completed")){
+            throw new ApiException("it is already Completed");
         }
-        if(consultation.getStatus().equalsIgnoreCase("Canceled")){
-            throw new ApiException("it is already canceled");
+      if(consultation.getStatus().equalsIgnoreCase("Canceled")){
+          throw new ApiException("it is already canceled");
+      }
+        // Check the possibility of cancellation before the day of the consultation
+        boolean canCancel = consultationRepository.canCancelBeforeConsultationDate(consultationId, currentDate);
+        if (!canCancel) {
+            throw new ApiException("Cannot cancel the consultation on or after the consultation date");
         }
         // Set the status to "Canceled"
         consultation.setStatus("Canceled");
